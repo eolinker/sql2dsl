@@ -1,3 +1,8 @@
+## 简介
+convert SQL to Elasticsearch DSL in java.
+
+将SQL转成Elasticsearch的DSL的工具，语言类型：Java。
+
 ## sql语法支持
 
 #### 普通查询条件支持
