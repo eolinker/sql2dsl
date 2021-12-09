@@ -15,22 +15,17 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 public class DSLConvert {
 
     public ImmutablePair<String, String> convertSelect(String sql, DSLSelectHandler dslSelectHandler) throws Exception {
-        // 新建 MySQL Parser
-        SQLStatementParser parser = new MySqlStatementParser(sql);
-        // 使用Parser解析生成AST，这里SQLStatement就是AST
-        SQLStatement statement = parser.parseStatement();
+        SQLStatement statement = parseSQL(sql);
         SelectHandler handler = new SelectHandler();
         handler.setDslSelectHandler(dslSelectHandler);
         return handler.handleSelect((SQLSelectStatement) statement);
     }
 
-
     public ImmutablePair<String, String> convert(String sql) throws Exception {
-        // 新建 MySQL Parser
-        SQLStatementParser parser = new MySqlStatementParser(sql);
-        // 使用Parser解析生成AST，这里SQLStatement就是AST
-        SQLStatement statement = parser.parseStatement();
-
+        SQLStatement statement = parseSQL(sql);
+        if (statement == null) {
+            throw new RuntimeException("SQL parser failed. Please check the SQL");
+        }
         if (statement instanceof SQLSelectStatement) {
             SelectHandler handler = new SelectHandler();
             ESSelectHandler esSelectDSLHandler = new ESSelectHandler();
@@ -44,5 +39,17 @@ public class DSLConvert {
             //todo
         }
         return null;
+    }
+
+    private static SQLStatement parseSQL(String sql) throws Exception {
+        try {
+            // 新建 MySQL Parser
+            SQLStatementParser parser = new MySqlStatementParser(sql);
+            // 使用Parser解析生成AST，这里SQLStatement就是AST
+            SQLStatement statement = parser.parseStatement();
+            return statement;
+        } catch (Exception e) {
+            throw new RuntimeException("SQL parser failed. Please check the SQL", e);
+        }
     }
 }

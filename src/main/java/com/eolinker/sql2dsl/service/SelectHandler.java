@@ -34,75 +34,78 @@ public class SelectHandler {
         String queryMapStr;
         String esType = "";
         String queryFrom = "0";
-        String querySize = "0";
+        String querySize = "10";
         String orderByStr = null;
         String groupByStr = null;
         String result = "";
 
-        if (statement.getSelect() != null) {
-            SQLSelectQuery sqlSelectQuery = statement.getSelect().getQuery();
-            MySqlSelectQueryBlock mySqlSelectQueryBlock = (MySqlSelectQueryBlock) sqlSelectQuery;
+        try {
+            if (statement.getSelect() != null) {
+                SQLSelectQuery sqlSelectQuery = statement.getSelect().getQuery();
+                MySqlSelectQueryBlock mySqlSelectQueryBlock = (MySqlSelectQueryBlock) sqlSelectQuery;
 
-            //get select fields
-            // 目前group by 才需要对fields进行解析
-            List<SQLSelectItem> selectItems = mySqlSelectQueryBlock.getSelectList();
-            List<ImmutableTriple<String, String, String>> fields = getSelectFields(selectItems);
+                //get select fields
+                // 目前group by 才需要对fields进行解析
+                List<SQLSelectItem> selectItems = mySqlSelectQueryBlock.getSelectList();
+                List<ImmutableTriple<String, String, String>> fields = getSelectFields(selectItems);
 
-            queryMapStr = handleSelectWhere(mySqlSelectQueryBlock.getWhere(), true);
+                queryMapStr = handleSelectWhere(mySqlSelectQueryBlock.getWhere(), true);
 
-            //Handle from
-            SQLExprTableSource sqlTableSource = (SQLExprTableSource) mySqlSelectQueryBlock.getFrom();
-            SQLIdentifierExpr fromSqlIdentifierExpr = (SQLIdentifierExpr) sqlTableSource.getExpr();
-            esType = fromSqlIdentifierExpr.getName();
+                //Handle from
+                SQLExprTableSource sqlTableSource = (SQLExprTableSource) mySqlSelectQueryBlock.getFrom();
+                SQLIdentifierExpr fromSqlIdentifierExpr = (SQLIdentifierExpr) sqlTableSource.getExpr();
+                esType = fromSqlIdentifierExpr.getName();
 
-            //Handle group by
-            List<String> groupByList = new ArrayList<>();
-            SQLSelectGroupByClause sqlSelectGroupByClause = mySqlSelectQueryBlock.getGroupBy();
-            if (sqlSelectGroupByClause != null) {
-                String havingStr = null;
-                SQLExpr havingSQL = sqlSelectGroupByClause.getHaving();
-                if (havingSQL != null) {
-                    havingStr = handleSelectWhere(havingSQL,true);
+                //Handle group by
+                List<String> groupByList = new ArrayList<>();
+                SQLSelectGroupByClause sqlSelectGroupByClause = mySqlSelectQueryBlock.getGroupBy();
+                if (sqlSelectGroupByClause != null) {
+                    String havingStr = null;
+                    SQLExpr havingSQL = sqlSelectGroupByClause.getHaving();
+                    if (havingSQL != null) {
+                        havingStr = handleSelectWhere(havingSQL, true);
+                    }
+                    List<SQLExpr> groupByExpr = sqlSelectGroupByClause.getItems();
+                    for (int i = 0; i < groupByExpr.size(); i++) {
+                        SQLIdentifierExpr groupBySqlIdentifierExpr = (SQLIdentifierExpr) groupByExpr.get(i);
+                        groupByList.add(groupBySqlIdentifierExpr.getName());
+                    }
+                    groupByStr = dslSelectHandler.groupBy(fields, groupByList, havingStr);
                 }
-                List<SQLExpr> groupByExpr = sqlSelectGroupByClause.getItems();
-                for (int i = 0; i < groupByExpr.size(); i++) {
-                    SQLIdentifierExpr groupBySqlIdentifierExpr = (SQLIdentifierExpr) groupByExpr.get(i);
-                    groupByList.add(groupBySqlIdentifierExpr.getName());
+
+                //Handle limit
+                SQLLimit sqlLimit = mySqlSelectQueryBlock.getLimit();
+                if (sqlLimit != null) {
+                    SQLIntegerExpr sqlLimitOffset = (SQLIntegerExpr) sqlLimit.getOffset();
+                    SQLIntegerExpr sqlLimitRowCount = (SQLIntegerExpr) sqlLimit.getRowCount();
+
+                    if (sqlLimitOffset == null) {
+                        queryFrom = "0";
+                    } else {
+                        queryFrom = sqlLimitOffset.getNumber().toString();
+                    }
+                    querySize = sqlLimitRowCount.getNumber().toString();
                 }
-                groupByStr = dslSelectHandler.groupBy(fields, groupByList, havingStr);
+
+                // Handle order
+                SQLOrderBy sqlOrderBy = mySqlSelectQueryBlock.getOrderBy();
+                if (sqlOrderBy != null) {
+                    List<ImmutablePair<String, String>> orderByList = new ArrayList<>();
+                    List<SQLSelectOrderByItem> sqlSelectOrderByItems = sqlOrderBy.getItems();
+                    for (int i = 0; i < sqlSelectOrderByItems.size(); i++) {
+                        SQLSelectOrderByItem sqlSelectOrderByItem = sqlSelectOrderByItems.get(i);
+                        SQLIdentifierExpr orderBySqlIdentifierExpr = (SQLIdentifierExpr) sqlSelectOrderByItem.getExpr();
+                        SQLOrderingSpecification sqlOrderingSpecification = sqlSelectOrderByItem.getType();
+                        orderByList.add(new ImmutablePair<>(orderBySqlIdentifierExpr.getName(), sqlOrderingSpecification.name));
+                    }
+                    orderByStr = dslSelectHandler.orderBy(orderByList);
+                }
+                result = dslSelectHandler.root(queryMapStr, groupByStr, orderByStr, queryFrom, querySize);
+
             }
-
-            //Handle limit
-            SQLLimit sqlLimit = mySqlSelectQueryBlock.getLimit();
-            if (sqlLimit != null) {
-                SQLIntegerExpr sqlLimitOffset = (SQLIntegerExpr) sqlLimit.getOffset();
-                SQLIntegerExpr sqlLimitRowCount = (SQLIntegerExpr) sqlLimit.getRowCount();
-
-                if (sqlLimitOffset == null) {
-                    queryFrom = "0";
-                } else {
-                    queryFrom = sqlLimitOffset.getNumber().toString();
-                }
-                querySize = sqlLimitRowCount.getNumber().toString();
-            }
-
-            // Handle order
-            SQLOrderBy sqlOrderBy = mySqlSelectQueryBlock.getOrderBy();
-            if (sqlOrderBy != null) {
-                List<ImmutablePair<String, String>> orderByList = new ArrayList<>();
-                List<SQLSelectOrderByItem> sqlSelectOrderByItems = sqlOrderBy.getItems();
-                for (int i = 0; i < sqlSelectOrderByItems.size(); i++) {
-                    SQLSelectOrderByItem sqlSelectOrderByItem = sqlSelectOrderByItems.get(i);
-                    SQLIdentifierExpr orderBySqlIdentifierExpr = (SQLIdentifierExpr) sqlSelectOrderByItem.getExpr();
-                    SQLOrderingSpecification sqlOrderingSpecification = sqlSelectOrderByItem.getType();
-                    orderByList.add(new ImmutablePair<>(orderBySqlIdentifierExpr.getName(), sqlOrderingSpecification.name));
-                }
-                orderByStr = dslSelectHandler.orderBy(orderByList);
-            }
-            result = dslSelectHandler.root(queryMapStr, groupByStr, orderByStr, queryFrom, querySize);
-
+        } catch (Exception e) {
+            throw new RuntimeException("SQL convert DSL failed. Please check the SQL", e);
         }
-
         return new ImmutablePair<>(result, esType);
     }
 
@@ -291,7 +294,7 @@ public class SelectHandler {
         return resultStr;
     }
 
-    private List<ImmutableTriple<String, String, String>> getSelectFields(List<SQLSelectItem> selectItems) throws Exception{
+    private List<ImmutableTriple<String, String, String>> getSelectFields(List<SQLSelectItem> selectItems) throws Exception {
         List<ImmutableTriple<String, String, String>> fields = new ArrayList<>(); // <column， alias, method>
         for (int i = 0; i < selectItems.size(); i++) {
             SQLSelectItem sqlSelectItem = selectItems.get(i);
