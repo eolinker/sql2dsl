@@ -1,4 +1,5 @@
 ## 简介
+
 convert SQL to Elasticsearch DSL in java.
 
 将SQL转成Elasticsearch的DSL的工具，语言类型：Java。
@@ -63,7 +64,107 @@ SQL的AST解析原理使用的是 [alibaba/druid](https://github.com/alibaba/dru
 - [ ] join表达式
 - [ ] 多表查询
 
-## 示例代码
+## 如何使用
+
+1. 添加倚赖
+
+```xml
+<!-- maven -->
+<dependency>
+    <groupId>com.eolinker</groupId>
+    <artifactId>sql2dsl</artifactId>
+    <version>1.0.0-RELEASE</version>
+</dependency>
+```
+
+或者
+
+```
+// gradle
+implementation 'com.eolinker:sql2dsl:1.0.0-RELEASE'
+```
+
+2. Demo
+
+```java
+package com.eolinker.sql2dsl;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.eolinker.sql2dsl.*;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
+
+public class TestDemo {
+
+    ESSelectHandler esSelectHandler = new ESSelectHandler();
+    MySqlSelectHandler mySqlSelectHandler = new MySqlSelectHandler();
+
+    @Test
+    public void normalTest() {
+        DSLConvert dslConvert = new DSLConvert();
+        // normal sql
+        String sql = "select * from user where sex = 1 and age >= 18";
+        try {
+            ImmutablePair<String, String> immutablePair = dslConvert.convertSelect(sql, esSelectHandler);
+            System.out.println("table: " + immutablePair.getRight());
+            // table: user
+            System.out.println("dsl: " + immutablePair.getLeft());
+            // dsl: {"query" : {"bool" : {"must" : [{"match_phrase" : {"sex" : "1"}},{"range" : {"age" : {"from" : "18"}}}]}}  ,"from" : 0  ,"size" : 10 }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testJavaBean2normalSQL() {
+        String table = "user";  // or es_index
+        UserDTO userDTO = new UserDTO();
+        userDTO.setSex(1);
+        userDTO.setNameQuery("chen");
+        userDTO.setDepts(Arrays.asList("A", "B", "C"));
+        userDTO.setOffset(0);
+        userDTO.setLimit(10);
+
+        String whereJson = JSON.toJSONString(userDTO);
+        System.out.println("where: " + whereJson);
+        // where: {"dept":["A","B","C"],"limit":10,"name like ":"chen","offset":0,"sex=":1}
+
+        String sql = DSLSqlHelper.json2sql(whereJson, table);
+        System.out.println("sql: " + sql);
+        // sql: SELECT * FROM user WHERE sex= 1 and name like  "chen" and dept  IN ("A","B","C") LIMIT 0,10
+    }
+
+    @Test
+    public void testJavaBean2GroupBySQL() {
+        String table = "score";  // or es_index
+        ScoreDTO scoreDTO = new ScoreDTO();
+        scoreDTO.setChineseStart(60f);
+        scoreDTO.setMathStart(60f);
+        scoreDTO.setEnglishStart(60f);
+        scoreDTO.setTotalScoreStart(180f);
+
+        List<String> selectFieldList = Arrays.asList("count(*)", "max(chinese)", "max(math)", "max(english)");
+        List<String> groupByList = Arrays.asList("dept");
+
+        String whereJson = JSONObject.toJSONString(scoreDTO);
+        System.out.println("where: " + whereJson);
+        // where: {"chinese>=":60.0,"english>=":60.0,"math>=":60.0,"total_score>=":180.0}
+
+        String sql = DSLSqlHelper.json2sql(whereJson, selectFieldList, table, groupByList);
+        System.out.println("sql: " +sql);
+        // sql: SELECT count(*),max(chinese),max(math),max(english) FROM score WHERE total_score>= 180.0 and english>= 60.0 and chinese>= 60.0 and math>= 60.0 GROUP BY dept
+
+    }
+}
+```
+
+## 示例代码类
+
 * com.eolinker.sql2dsl.TestDemo
 
 ## 例子展示
