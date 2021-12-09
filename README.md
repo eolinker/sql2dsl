@@ -3,6 +3,12 @@ convert SQL to Elasticsearch DSL in java.
 
 将SQL转成Elasticsearch的DSL的工具，语言类型：Java。
 
+内含javabean转sql的工具类（DSLSqlHelper）
+
+实现DSLSelectHandler接口可将SQL转成其他类SQL查询语句，如presto sql/hive sql等。
+
+SQL的AST解析原理使用的是 [alibaba/druid](https://github.com/alibaba/druid) ，druid不支持的语法将无法解析。
+
 ## sql语法支持
 
 #### 普通查询条件支持
