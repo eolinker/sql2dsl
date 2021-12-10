@@ -50,7 +50,9 @@ public class TestDemo {
             ImmutablePair<String, String> immutablePair = dslConvert.convertSelect(sql, esSelectHandler);
 //            ImmutablePair<String, String> immutablePair = dslConvert.convert(sql);
             System.out.println("table: " + immutablePair.getRight());
+            // table: user
             System.out.println("dsl: " + immutablePair.getLeft());
+            // dsl: {"query" : {"bool" : {"must" : [{"match_phrase" : {"sex" : "1"}},{"range" : {"age" : {"from" : "18"}}}]}}  ,"from" : 0  ,"size" : 10 }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -68,9 +70,11 @@ public class TestDemo {
 
         String whereJson = JSON.toJSONString(userDTO);
         System.out.println("where: " + whereJson);
+        // where: {"dept":["A","B","C"],"limit":10,"name like ":"chen","offset":0,"sex=":1}
 
         String sql = DSLSqlHelper.json2sql(whereJson, table);
         System.out.println("sql: " + sql);
+        // sql: SELECT * FROM user WHERE sex= 1 and name like  "chen" and dept  IN ("A","B","C") LIMIT 0,10
     }
 
     @Test
@@ -87,9 +91,11 @@ public class TestDemo {
 
         String whereJson = JSONObject.toJSONString(scoreDTO);
         System.out.println("where: " + whereJson);
+        // where: {"chinese>=":60.0,"english>=":60.0,"math>=":60.0,"total_score>=":180.0}
 
         String sql = DSLSqlHelper.json2sql(whereJson, selectFieldList, table, groupByList);
         System.out.println("sql: " +sql);
+        // sql: SELECT count(*),max(chinese),max(math),max(english) FROM score WHERE total_score>= 180.0 and english>= 60.0 and chinese>= 60.0 and math>= 60.0 GROUP BY dept
 
     }
 }
