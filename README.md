@@ -111,8 +111,8 @@ public class TestDemo {
         String sql = "select * from user where sex = 1 and age >= 18";
         try {
             ImmutablePair<String, String> immutablePair = dslConvert.convertSelect(sql, esSelectHandler);
-            System.out.println("table: " + immutablePair.getRight());
-            // table: user
+            System.out.println("es index: " + immutablePair.getRight());
+            // es index: user
             System.out.println("dsl: " + immutablePair.getLeft());
             // dsl: {"query" : {"bool" : {"must" : [{"match_phrase" : {"sex" : "1"}},{"range" : {"age" : {"from" : "18"}}}]}}  ,"from" : 0  ,"size" : 10 }
         } catch (Exception e) {
