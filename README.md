@@ -104,7 +104,7 @@ public class TestDemo {
     ESSelectHandler esSelectHandler = new ESSelectHandler();
 
     @Test
-    public void normalTest() {
+    public void normalSql2DSLTest() {
         DSLConvert dslConvert = new DSLConvert();
         // normal sql
         String sql = "select * from user where sex = 1 and age >= 18";

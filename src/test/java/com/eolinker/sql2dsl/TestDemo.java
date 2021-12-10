@@ -20,7 +20,7 @@ public class TestDemo {
     ESSelectHandler esSelectHandler = new ESSelectHandler();
 
     @Test
-    public void normalTest() {
+    public void normalSql2DSLTest() {
         //https://github.com/alibaba/druid/wiki/SQL-Parser
         DSLConvert dslConvert = new DSLConvert();
 
