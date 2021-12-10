@@ -102,7 +102,6 @@ import java.util.List;
 public class TestDemo {
 
     ESSelectHandler esSelectHandler = new ESSelectHandler();
-    MySqlSelectHandler mySqlSelectHandler = new MySqlSelectHandler();
 
     @Test
     public void normalTest() {
