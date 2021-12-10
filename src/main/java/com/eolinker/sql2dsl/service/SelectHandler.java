@@ -137,7 +137,7 @@ public class SelectHandler {
 
     public String handleSelectWhereAndExpr(SQLBinaryOpExpr sqlBinaryOpExpr) throws Exception {
 
-        ImmutablePair<String, String> immutablePair = HandleLeftAndRight(sqlBinaryOpExpr);
+        ImmutablePair<String, String> immutablePair = handleLeftAndRight(sqlBinaryOpExpr);
 
         String resultStr = dslSelectHandler.andExpr(immutablePair.getLeft(), immutablePair.getRight());
 
@@ -154,7 +154,7 @@ public class SelectHandler {
 
     public String handleSelectWhereOrExpr(SQLBinaryOpExpr sqlBinaryOpExpr) throws Exception {
 
-        ImmutablePair<String, String> immutablePair = HandleLeftAndRight(sqlBinaryOpExpr);
+        ImmutablePair<String, String> immutablePair = handleLeftAndRight(sqlBinaryOpExpr);
 
         String resultStr = dslSelectHandler.orExpr(immutablePair.getLeft(), immutablePair.getRight());
 
@@ -169,7 +169,7 @@ public class SelectHandler {
         return resultStr;
     }
 
-    private ImmutablePair<String, String> HandleLeftAndRight(SQLBinaryOpExpr sqlBinaryOpExpr) throws Exception {
+    private ImmutablePair<String, String> handleLeftAndRight(SQLBinaryOpExpr sqlBinaryOpExpr) throws Exception {
         SQLExpr leftExpr = sqlBinaryOpExpr.getLeft();
         SQLExpr rightExpr = sqlBinaryOpExpr.getRight();
 
